@@ -1,3 +1,4 @@
+```mermaid
 block-beta
     columns 1
 
@@ -34,3 +35,4 @@ block-beta
     end
 
     style note1 fill:#FFFFCC,text-align:left;
+```
