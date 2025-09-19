@@ -161,8 +161,8 @@ namespace cpsw_shared_obj.h {
     }
 }
 
-CShObj *-- Key
-Key *-- CShObj
+CShObj *-- Key : protected nested class
+Key *-- CShObj : friend class
 
 namespace cpsw_mmio_dev.h {
     class CMMIOAddressImpl {
@@ -272,14 +272,6 @@ namespace cpsw_path.h_or.cc {
         #explore_children_r(ConstDevImpl, struct explorer_ctxt*) void
     }
 
-    class ConstDevImpl {
-        <<typedef>>
-    }
-
-    class CDevImpl {
-
-    }
-
     class PathImpl {
         <<typedef>>
     }
@@ -302,7 +294,6 @@ IPathImpl --|> IPath
 CPathImpl ..|> IPathImpl: implements
 CPathImpl --|> PathEntryContainer
 PathImpl ..> CPathImpl: shared_ptr
-ConstDevImpl ..> CDevImpl: shared_ptr
 PathEntryContainer ..> PathEntry: std#colon;#colon;vector
 
 namespace cpsw_api_user.h {
@@ -489,7 +480,17 @@ IChild --|> IEntry
 
 namespace cpsw_api_builder.h {
     class IField {
-
+        <<interface>>
+        +DFLT_SIZE uint64_t$
+        +DFLT_CACHEABLE Cacheable$
+        
+        +getCacheable()* const Cacheable
+        +setCacheable(Cacheable c)* void
+        +setDescription(const char* desc)* void
+        +setDescription(const std::string& desc)* void
+        +~IField()
+        +getSelf()* EntryImpl
+        +create(const char* name, uint64_t size)$ Field
     }
 
     class Field {
@@ -526,7 +527,15 @@ namespace cpsw_api_builder.h {
     }
 
     class IDev {
+        <<interface>>
+        +DFLT_NELMS unsigned$
         
+        +addAtAddress(Field f, unsigned nelms)* void
+        +~IDev()
+        +create(const char* name, uint64_t size)$ Dev
+        +startUp()* void
+        +isStarted()* const int
+        +getRootDev()$ Dev
     }
 
     class Dev {
@@ -538,8 +547,8 @@ IField *-- Cacheable
 IField <.. Field : sharedptr
 IIntField <.. IntField : sharedptr
 IDev <.. Dev : sharedptr
-IDev --|> IField : virtual
-IDev --|> IHub : virtual
+IDev ..|> IField : implements
+IDev ..|> IHub : implements
 IField --|> IEntry : virtual
 IIntField --|> IField : virtual
 
@@ -548,23 +557,104 @@ namespace cpsw_entry.h {
 
     }
     class CEntryImpl {
-        <<interface>>
-        +dumpYamlPart(YAML::Node &)* void
-        +dumpMyConfigToYaml(Path, YAML::Node &)* uint64_t
-        +loadMyConfigFromYaml(Path, YAML::Node &)* uint64_t
-        +processYamlConfig(Path, YAML::Node &, bool)* uint64_t
+                +CONFIG_PRIO_OFF int$
+        +DFLT_CONFIG_PRIO int$
+        +DFLT_CONFIG_PRIO_DEV int$
+        +DFLT_POLL_SECS() double$
+        
+        -std::string name_
+        -std::string description_
+        -bool singleInterfaceOnly_
+        -Cacheable cacheable_
+        -int configPrio_
+        -bool configPrioSet_
+        -double pollSecs_
+        -bool locked_
+        -CMtxLazy uniqueListMtx_
+        -CUniqueListHead uniqueListHead_
+        -int started_
+        #uint64_t size_
+        
+        +CEntryImpl(Key& k, const char* name, uint64_t size)
+        +CEntryImpl(Key& k, YamlState& n)
+        +~CEntryImpl()
+        +dumpYamlPart(YAML::Node& node) const void
+        +dumpMyConfigToYaml(Path p, YAML::Node& node) const uint64_t
+        +loadMyConfigFromYaml(Path p, YAML::Node& node) const uint64_t
+        +processYamlConfig(Path p, YAML::Node& node, bool flag) const uint64_t
+        +_getClassName()$ const char*
+        +getClassName() const char&ast;
+        +clone(Key& k) CEntryImpl&ast;
+        +getName() const char&ast;
+        +getDescription() const char&ast;
+        +getPollSecs() const double
+        +setDescription(const char* desc) void
+        +setDescription(const std::string& desc) void
+        +getSize() const uint64_t
+        +getCacheable() const Cacheable
+        +getConfigPrio() const int
+        +setCacheable(Cacheable cacheable) void
+        +setConfigPrio(int configPrio) void
+        +setPollSecs(double pollSecs) void
+        +setLocked() void
+        +getLocked() bool
+        +postHook(ConstShObj obj) void
+        +accept(IVisitor* v, RecursionOrder order, int recursionDepth) void
+        +getSelf() EntryImpl
+        +getConstSelf() const EntryImpl
+        +isHub() const Hub
+        +isConstDevImpl() const ConstDevImpl
+        +singleInterfaceOnly() const bool
+        +getUniqueHandle(IEntryAdapterKey& key, ConstPath p) const UniqueHandle
+        +createAdapter(IEntryAdapterKey& key, ConstPath p, const std::type_info& interfaceType) const EntryAdapt
+        +dump(FILE* file) const void
+        +dump() const void
+        
+        #CEntryImpl(const CEntryImpl& ei, Key& k)
+        #getDefaultConfigPrio() const int
+        #getDefaultPollSecs() const double
+        #_createAdapter~ADAPT, IMPL~(const IMPL* helper, ConstPath p) const EntryAdapt
+        #isInterface~INTRF~(const std::type_info& interfaceType)$ bool
+        
+        -CEntryImpl(const CEntryImpl&)
+        -operator=(const CEntryImpl&) CEntryImpl&
+        -checkArgs() void
+    }
+
+    class CUniqueHandle {
+        <<nested class>>
+        -CUniqueListHead* p_
+        -CMtx* mtx_
+        -ConstPath path_
+        
+        +CUniqueHandle(CMtx* m, ConstPath path)
+        +add_unguarded(CUniqueListHead* h) void
+        +del_unguarded() void
+        +getConstPath() ConstPath
+        +~CUniqueHandle()
+    }
+    
+    class UniqueHandle {
+        <<typedef>>
+        shared_ptr~CUniqueHandle~
+    }
+    
+    class CUniqueListHead {
+        <<nested class>>
+        #CUniqueHandle* n_
+        +CUniqueListHead()
+        +getNext() CUniqueHandle&ast;
+        +setNext(CUniqueHandle* n) void
+        +~CUniqueListHead()
     }
 
     class EntryImpl {
         <<typedef>>
     }
 
-    class CDevImpl {
-
-    }
-
     class ConstDevImpl {
         <<typedef>>
+        shared_ptr~const CDevImpl~
     }
 
     class IEntryAdapterKey {
@@ -575,6 +665,12 @@ namespace cpsw_entry.h {
         <<typedef>>
     }
 }
+
+CEntryImpl *-- CUniqueHandle : public nested class
+CEntryImpl *-- CUniqueListHead : private nested class
+CEntryImpl ..> UniqueHandle : defines
+CUniqueHandle --|> CUniqueListHead : inherits
+UniqueHandle ..> CUniqueHandle : wraps
 
 namespace cpsw_entry_adapt.h {
     class IEntryAdapt {
@@ -607,9 +703,67 @@ namespace cpsw_entry_adapt.h {
 IEntryAdapt ..|> IVal_Base: implements
 IEntryAdapt --|> CShObj
 CEntryImpl <.. EntryImpl : sharedptr
-CDevImpl <.. ConstDevImpl : const sharedptr
+CDevImpl <.. ConstDevImpl : uses
 IEntryAdapt <.. EntryAdapt : sharedptr
-CEntryImpl --|> IField: virtual
-CEntryImpl --|> CShObj
-CEntryImpl --|> CYamlSupportBase
+CEntryImpl ..|> IField : implements
+CEntryImpl --|> CShObj : inherits
+CEntryImpl --|> CYamlSupportBase : inherits
+
+namespace cpsw_hub.h_or_cc {
+class CDevImpl {
+        -int started_
+        -MyChildren children_
+        -PrioList configPrioList_
+        
+        +CDevImpl(Key& k, const char* name, uint64_t size)
+        +CDevImpl(Key& k, YamlState& ypath)
+        +~CDevImpl()
+        +dumpYamlPart(YAML::Node& node) const void
+        +_getClassName()$ const char*
+        +getClassName() const char&ast;
+        +clone(Key& k) CDevImpl&ast;
+        +postHook(ConstShObj orig) void
+        +addAtAddress(Field child, unsigned nelms) void
+        +doAddAtAddress~T~(Field child, YamlState& ypath) shared_ptr~T~
+        +addAtAddress(Field child, YamlState& ypath) void
+        +findByName(const char* s) const Path
+        +getChild(const char* name) const Child
+        +getAddress(const char* name) const Address
+        +accept(IVisitor* v, RecursionOrder order, int recursionDepth) void
+        +getChildren() const Children
+        +isHub() const Hub
+        +isConstDevImpl() const ConstDevImpl
+        +begin() const const_iterator
+        +end() const const_iterator
+        +isStarted() const int
+        +startUp() void
+        +processYamlConfig(Path p, YAML::Node& node, bool flag) const uint64_t
+        
+        #add(AddressImpl a, Field child) void
+        #getAKey() IAddress::AKey
+        #CDevImpl(const CDevImpl& orig, Key& k)
+        #getDefaultConfigPrio() const int
+    }
+
+    class MyChildren {
+        <<typedef>>
+        std::map&lt;const char*, AddressImpl, StrCmp>
+    }
+    
+    class PrioList {
+        <<typedef>>
+        std::list~AddressImpl~
+    }
+    
+    class const_iterator {
+        <<typedef>>
+        MyChildren::const_iterator
+    }
+}
+
+CDevImpl *-- MyChildren : contains
+CDevImpl *-- PrioList : contains
+CDevImpl ..> const_iterator : defines
+CDevImpl --|> CEntryImpl : inherits
+CDevImpl ..|> IDev : implements
 ```

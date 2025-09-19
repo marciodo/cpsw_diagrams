@@ -228,8 +228,8 @@ classDiagram
     `cpsw_sval.h : CScalVal_Adapt` ..|> `cpsw_api_user.h : IScalVal`: implements
     `cpsw_sval.h : CScalVal_ROAdapt` --|> `cpsw_sval.h : IIntEntryAdapt`
     `cpsw_sval.h : CScalVal_Adapt` --|> `cpsw_sval.h : CScalVal_ROAdapt`
-    `cpsw_shared_obj.h : CShObj` *-- `cpsw_shared_obj.h : Key`
-    `cpsw_shared_obj.h : Key` *-- `cpsw_shared_obj.h : CShObj`
+    `cpsw_shared_obj.h : CShObj` *-- `cpsw_shared_obj.h : Key` : protected nested class
+    `cpsw_shared_obj.h : Key` *-- `cpsw_shared_obj.h : CShObj` : friend class
 
 %% Color schemes
 classDef cpsw_api_user_h fill:#CCFFE5
