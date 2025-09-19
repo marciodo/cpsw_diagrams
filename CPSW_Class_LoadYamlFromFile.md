@@ -1,4 +1,11 @@
 ```mermaid
+---
+config:
+  look: neo
+  layout: elk
+  theme: neutral
+---
+
 classDiagram
     direction BT
 
@@ -121,10 +128,10 @@ classDiagram
     `cpsw_hub.h : CDevImpl` ..> const_iterator : defines
     `cpsw_hub.h : CDevImpl` --|> `cpsw_entry.h : CEntryImpl` : inherits
     `cpsw_hub.h : CDevImpl` ..|> `cpsw_api_builder.h : IDev` : implements
-    `cpsw_api_builder.h : IDev` ..|> IHub : implements
-    `cpsw_api_builder.h : IDev` ..|> IField : implements
+    `cpsw_api_builder.h : IDev` ..|> `cpsw_api_user.h : IHub` : implements
+    `cpsw_api_builder.h : IDev` ..|> `cpsw_api_builder.h : IField` : implements
 
-    class IField {
+    class `cpsw_api_builder.h : IField`:::cpsw_api_builder_h {
         <<interface>>
         +DFLT_SIZE uint64_t$
         +DFLT_CACHEABLE Cacheable$
@@ -138,11 +145,15 @@ classDiagram
         +create(const char* name, uint64_t size)$ Field
     }
     
-    class CShObj {
-        <<class>>
+    class Cacheable:::cpsw_api_builder_h {
+        <<enumeration>>
+        UNKNOWN_CACHEABLE = 0
+        NOT_CACHEABLE
+        WT_CACHEABLE
+        WB_CACHEABLE
     }
-    
-    class CYamlSupportBase {
+
+    class CShObj {
         <<class>>
     }
     
@@ -262,10 +273,6 @@ classDiagram
         <<class>>
     }
     
-    class IVisitor {
-        <<interface>>
-    }
-    
     class RecursionOrder {
         <<enum/class>>
     }
@@ -294,9 +301,60 @@ classDiagram
         <<class>>
     }
 
-    `cpsw_entry.h : CEntryImpl` ..|> IField : implements
+    class `cpsw_api_user.h : IEntry`:::cpsw_api_user_h {
+        <<interface>>
+        +getName()* char&ast;
+        +getSize()* uint64_t
+        +getDescription()* char&ast;
+        +getPollSecs()* double
+        +isHub()* Hub
+        +dump(FILE *)* void
+        +dump()* void
+        +~IEntry(void)
+    }
+
+    class `cpsw_api_builder.h : IVisitable`:::cpsw_api_builder_h {
+        <<interface>>
+        +DEPTH_INDEFINITE int$
+        +DEPTH_NONE int$
+        
+        +accept(IVisitor* v, RecursionOrder order, int recursionDepth)* void
+        +~IVisitable()
+    }
+    
+    class RecursionOrder:::cpsw_api_builder_h {
+        <<enumeration>>
+        RECURSE_DEPTH_FIRST = true
+        RECURSE_DEPTH_AFTER = false
+    }
+
+    class IYamlSupportBase {
+        <<interface>>
+    }
+    
+    class `cpsw_yaml.h : CYamlSupportBase`:::cpsw_yaml_h {
+        +dumpYamlPart(YAML::Node& node) const void
+        +_getClassName()$ const char*
+        +getClassName() const char&ast;
+        +overrideNode(YamlState& orig)$ void
+        +setClassName(YAML::Node& node) const void
+        +dumpYaml(YAML::Node& node) const void
+    }
+    
+    class `cpsw_api_user.h : IHub`:::cpsw_api_user_h {
+        <<interface>>
+        +findByName(const char* path)* const Path
+        +getChild(const char* name)* const Child
+        +getChildren()* const Children
+        +~IHub()
+    }
+
+    `cpsw_yaml.h : CYamlSupportBase` ..|> IYamlSupportBase : implements
+    `cpsw_api_user.h : IHub` ..|> `cpsw_api_user.h : IEntry` : implements
+    `cpsw_api_builder.h : IVisitable` *-- RecursionOrder : public nested enum
+    `cpsw_entry.h : CEntryImpl` ..|> `cpsw_api_builder.h : IField` : implements
     `cpsw_entry.h : CEntryImpl` --|> `cpsw_shared_obj.h : CShObj` : inherits
-    `cpsw_entry.h : CEntryImpl` --|> CYamlSupportBase : inherits
+    `cpsw_entry.h : CEntryImpl` --|> `cpsw_yaml.h : CYamlSupportBase` : inherits
     `cpsw_entry.h : CEntryImpl` *-- `cpsw_entry.cc : CUniqueHandle` : public nested class
     `cpsw_entry.h : CEntryImpl` *-- CUniqueListHead : private nested class
     `cpsw_entry.h : CEntryImpl` ..> UniqueHandle : defines
@@ -304,10 +362,15 @@ classDiagram
     UniqueHandle ..> `cpsw_entry.cc : CUniqueHandle` : wraps
     `cpsw_shared_obj.h : CShObj` *-- `cpsw_shared_obj.h : Key` : protected nested class
     `cpsw_shared_obj.h : Key` *-- `cpsw_shared_obj.h : CShObj` : friend class
+    `cpsw_api_builder.h : IField` ..|> `cpsw_api_user.h : IEntry` : implements
+    `cpsw_api_builder.h : IField` ..|> `cpsw_api_builder.h : IVisitable` : implements
+    `cpsw_api_builder.h : IField` *-- Cacheable : nested enum
 
 %% Color schemes
-classDef cpsw_api_builder_h fill:#CCFFE5
+classDef cpsw_api_user_h fill:#CCFFE5
+classDef cpsw_api_builder_h fill:#99FFCC
 classDef cpsw_entry_h_cc fill:#CCFFFF
 classDef cpsw_hub_h fill:#FFFFCC
 classDef cpsw_shared_obj_h fill:#E5CCFF
+classDef cpsw_yaml_h fill:#FFE5CC
 ```

@@ -132,7 +132,7 @@ classDiagram
         +isHub()* Hub
         +dump(FILE *)* void
         +dump()* void
-        +~IEntry(void);
+        +~IEntry(void)
     }
     class `cpsw_api_user.h : IScalVal_RO`:::cpsw_api_user_h {
         <<interface>>

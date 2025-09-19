@@ -106,11 +106,15 @@ CIntEntryImpl ..|> CEntryImpl
 
 namespace cpsw_yaml.h {
     class CYamlSupportBase {
-        <<interface>>
-        +dumpYamlPart(&node YAML::Node)* void
+        +dumpYamlPart(YAML::Node& node) const void
+        +_getClassName()$ const char*
+        +getClassName() const char&ast;
+        +overrideNode(YamlState& orig)$ void
+        +setClassName(YAML::Node& node) const void
+        +dumpYaml(YAML::Node& node) const void
     }
 }
-CYamlSupportBase --|> IYamlSupportBase: virtual
+CYamlSupportBase ..|> IYamlSupportBase : implements
 
 namespace cpsw_shared_obj.h {
     class Key {
@@ -400,10 +404,17 @@ namespace cpsw_api_user.h {
         +isHub()* Hub
         +dump(FILE *)* void
         +dump()* void
-        +~IEntry(void);
+        +~IEntry(void)
     }
 
-    class IHub
+    class IHub {
+        <<interface>>
+        +findByName(const char* path)* const Path
+        +getChild(const char* name)* const Child
+        +getChildren()* const Children
+        +~IHub()
+    }
+
     class IChild
 
     class Child {
@@ -473,12 +484,28 @@ IScalVal --|> IScalVal_WO: virtual
 IScalVal_RO --|> IScalVal_Base: virtual
 IScalVal_Base --|> IVal_Base: virtual
 IVal_Base --|> IEntry: virtual
-IHub --|> IEntry: virtual
+IHub ..|> IEntry: implements
 IVal_Base *-- Mode
 IVal_Base *-- Encoding
 IChild --|> IEntry
 
 namespace cpsw_api_builder.h {
+    
+    class IVisitable {
+        <<interface>>
+        +DEPTH_INDEFINITE int$
+        +DEPTH_NONE int$
+        
+        +accept(IVisitor* v, RecursionOrder order, int recursionDepth)* void
+        +~IVisitable()
+    }
+    
+    class RecursionOrder {
+        <<enumeration>>
+        RECURSE_DEPTH_FIRST = true
+        RECURSE_DEPTH_AFTER = false
+    }
+    
     class IField {
         <<interface>>
         +DFLT_SIZE uint64_t$
@@ -495,6 +522,7 @@ namespace cpsw_api_builder.h {
 
     class Field {
         <<typedef>>
+        shared_ptr~IField~
     }
     
     class Cacheable {
@@ -543,8 +571,11 @@ namespace cpsw_api_builder.h {
     }
 
 }
+
+IVisitable *-- RecursionOrder : public nested enum
+IField ..|> IVisitable : implements
 IField *-- Cacheable
-IField <.. Field : sharedptr
+IField <.. Field : wraps
 IIntField <.. IntField : sharedptr
 IDev <.. Dev : sharedptr
 IDev ..|> IField : implements
