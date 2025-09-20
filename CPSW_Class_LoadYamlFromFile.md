@@ -8,10 +8,6 @@ config:
 
 classDiagram
     direction BT
-
-    class CEntryImpl {
-        <<class>>
-    }
     
     class `cpsw_shared_obj.h : CShObj`:::cpsw_shared_obj_h {
         +class StolenKeyError
@@ -73,6 +69,11 @@ classDiagram
         +getRootDev()$ Dev
     }
     
+    class `cpsw_api_builder.h : Dev`:::cpsw_api_builder_h {
+        <<typedef>>
+        shared_ptr~IDev~
+    }
+
     class `cpsw_hub.h : CDevImpl`:::cpsw_hub_h {
         -int started_
         -MyChildren children_
@@ -151,10 +152,6 @@ classDiagram
         NOT_CACHEABLE
         WT_CACHEABLE
         WB_CACHEABLE
-    }
-
-    class CShObj {
-        <<class>>
     }
     
     class `cpsw_entry.h : CEntryImpl`:::cpsw_entry_h_cc {
@@ -248,58 +245,6 @@ classDiagram
         +setNext(CUniqueHandle* n) void
         +~CUniqueListHead()
     }
-    
-    class Key {
-        <<class>>
-    }
-    
-    class YamlState {
-        <<class>>
-    }
-    
-    class Cacheable {
-        <<class>>
-    }
-    
-    class CMtxLazy {
-        <<class>>
-    }
-    
-    class Path {
-        <<class>>
-    }
-    
-    class ConstPath {
-        <<class>>
-    }
-    
-    class RecursionOrder {
-        <<enum/class>>
-    }
-    
-    class EntryImpl {
-        <<class>>
-    }
-    
-    class Hub {
-        <<class>>
-    }
-    
-    class ConstDevImpl {
-        <<class>>
-    }
-    
-    class ConstShObj {
-        <<class>>
-    }
-    
-    class IEntryAdapterKey {
-        <<class>>
-    }
-    
-    class EntryAdapt {
-        <<class>>
-    }
 
     class `cpsw_api_user.h : IEntry`:::cpsw_api_user_h {
         <<interface>>
@@ -328,8 +273,11 @@ classDiagram
         RECURSE_DEPTH_AFTER = false
     }
 
-    class IYamlSupportBase {
+    class `cpsw_api_user.h : IYamlSupportBase`:::cpsw_api_user_h {
         <<interface>>
+        +dumpYaml(&n:YAML::Node)* void
+        +MIN_SUPPORTED_SCHEMA=3 : const int$
+        +MAX_SUPPORTED_SCHEMA=3 : const int$
     }
     
     class `cpsw_yaml.h : CYamlSupportBase`:::cpsw_yaml_h {
@@ -349,7 +297,66 @@ classDiagram
         +~IHub()
     }
 
-    `cpsw_yaml.h : CYamlSupportBase` ..|> IYamlSupportBase : implements
+    class `cpsw_api_builder.h : IYamlSupport`:::cpsw_api_builder_h {
+        <<namespace>>
+        +dumpYamlFile(Entry top, const char* filename, const char* root_entry_name)$ void
+        +buildHierarchy(const char* yaml_name, const char* root_name, const char* yaml_dir, IYamlFixup* fixup, bool resolveMergeKeys)$ Dev
+        +buildHierarchy(std::istream& in, const char* root_name, const char* yaml_dir, IYamlFixup* fixup, bool resolveMergeKeys)$ Dev
+        +buildHierarchy(YamlNode yaml, const char* root_name, IYamlFixup* fixup, bool resolveMergeKeys)$ Dev
+        +loadYaml(std::istream& in)$ YamlNode
+        +setSchemaVersion(YamlNode yaml, int maj, int min, int rev)$ void
+        +startHierarchy(Dev device)$ Path
+        +resolveMergeKeys(YamlNode node)$ void
+        +getNumberOfUnrecognizedKeys()$ unsigned long
+    }
+
+    class `cpsw_yaml.h : IYamlFactoryBase&lt;T>`:::cpsw_yaml_h {
+        -Registry registry_
+        -const char* className_
+        
+        +IYamlFactoryBase(const char* className, Registry r)
+        +makeItem(YamlState& node)* T
+        +getRegistry() Registry
+        +~IYamlFactoryBase()
+    }
+
+    class Registry:::cpsw_yaml_h {
+        <<typedef>>
+        shared_ptr~IYamlTypeRegistry~T~~
+    }
+    
+    class `cpsw_yaml.h : CYamlFieldFactoryBase`:::cpsw_yaml_h {
+        +dispatchMakeField(const YAML::Node& node, const char* root_name)$ Dev
+        +loadPreprocessedYaml(std::istream& stream, const char* yaml_dir, bool resolveMergeKeys)$ YAML::Node
+        +loadPreprocessedYaml(const char* char_stream, const char* yaml_dir, bool resolveMergeKeys)$ YAML::Node
+        +loadPreprocessedYamlFile(const char* file_name, const char* yaml_dir, bool resolveMergeKeys)$ YAML::Node
+        +dumpClasses(std::ostream& os)$ void
+        +getFieldRegistry_()$ FieldRegistry
+        
+        #CYamlFieldFactoryBase(const char* typeLabel)
+        #addChildren(CEntryImpl& entry, YamlState& state) void
+        #addChildren(CDevImpl& dev, YamlState& state) void
+    }
+    
+    class FieldRegistry:::cpsw_yaml_h {
+        <<typedef>>
+        IYamlFactoryBase~Field~::Registry
+    }
+
+    class `cpsw_yaml.h : IYamlTypeRegistry&ltT>`:::cpsw_yaml_h {
+        +makeItem(YamlState& state)* T
+        +extractClassName(std::vector~std::string~* svec_p, YamlState& state)* void
+        +addFactory(const char* className, IYamlFactoryBase~T~* f)* void
+        +delFactory(const char* className)* void
+        +dumpClasses(std::ostream& os)* void
+    }
+
+    `cpsw_yaml.h : IYamlFactoryBase&lt;T>` ..> Registry : defines
+    `cpsw_yaml.h : CYamlFieldFactoryBase` --|> `cpsw_yaml.h : IYamlFactoryBase&lt;T>` : (bind)[T->Field]
+    `cpsw_yaml.h : CYamlFieldFactoryBase` ..> FieldRegistry : defines
+    Registry ..> `cpsw_yaml.h : IYamlTypeRegistry&ltT>` : wraps
+    FieldRegistry .. Registry : (bind)[T->Field]
+    `cpsw_yaml.h : CYamlSupportBase` ..|> `cpsw_api_user.h : IYamlSupportBase` : implements
     `cpsw_api_user.h : IHub` ..|> `cpsw_api_user.h : IEntry` : implements
     `cpsw_api_builder.h : IVisitable` *-- RecursionOrder : public nested enum
     `cpsw_entry.h : CEntryImpl` ..|> `cpsw_api_builder.h : IField` : implements
@@ -360,6 +367,7 @@ classDiagram
     `cpsw_entry.h : CEntryImpl` ..> UniqueHandle : defines
     `cpsw_entry.cc : CUniqueHandle` --|> CUniqueListHead : inherits
     UniqueHandle ..> `cpsw_entry.cc : CUniqueHandle` : wraps
+    `cpsw_api_builder.h : Dev` ..> `cpsw_api_builder.h : IDev` : wraps
     `cpsw_shared_obj.h : CShObj` *-- `cpsw_shared_obj.h : Key` : protected nested class
     `cpsw_shared_obj.h : Key` *-- `cpsw_shared_obj.h : CShObj` : friend class
     `cpsw_api_builder.h : IField` ..|> `cpsw_api_user.h : IEntry` : implements

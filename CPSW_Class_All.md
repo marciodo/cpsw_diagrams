@@ -113,8 +113,55 @@ namespace cpsw_yaml.h {
         +setClassName(YAML::Node& node) const void
         +dumpYaml(YAML::Node& node) const void
     }
+
+    class IYamlFactoryBase~T~ {
+        -Registry registry_
+        -const char* className_
+        
+        +IYamlFactoryBase(const char* className, Registry r)
+        +makeItem(YamlState& node)* T
+        +getRegistry() Registry
+        +~IYamlFactoryBase()
+    }
+
+    class Registry {
+        <<typedef>>
+        shared_ptr~IYamlTypeRegistry~T~~
+    }
+    
+    class CYamlFieldFactoryBase {
+        +dispatchMakeField(const YAML::Node& node, const char* root_name)$ Dev
+        +loadPreprocessedYaml(std::istream& stream, const char* yaml_dir, bool resolveMergeKeys)$ YAML::Node
+        +loadPreprocessedYaml(const char* char_stream, const char* yaml_dir, bool resolveMergeKeys)$ YAML::Node
+        +loadPreprocessedYamlFile(const char* file_name, const char* yaml_dir, bool resolveMergeKeys)$ YAML::Node
+        +dumpClasses(std::ostream& os)$ void
+        +getFieldRegistry_()$ FieldRegistry
+        
+        #CYamlFieldFactoryBase(const char* typeLabel)
+        #addChildren(CEntryImpl& entry, YamlState& state) void
+        #addChildren(CDevImpl& dev, YamlState& state) void
+    }
+    
+    class FieldRegistry {
+        <<typedef>>
+        IYamlFactoryBase~Field~::Registry
+    }
+
+    class IYamlTypeRegistry~T~ {
+        +makeItem(YamlState& state)* T
+        +extractClassName(std::vector~std::string~* svec_p, YamlState& state)* void
+        +addFactory(const char* className, IYamlFactoryBase~T~* f)* void
+        +delFactory(const char* className)* void
+        +dumpClasses(std::ostream& os)* void
+    }
 }
+
 CYamlSupportBase ..|> IYamlSupportBase : implements
+IYamlFactoryBase~T~ ..> Registry : defines
+CYamlFieldFactoryBase --|> IYamlFactoryBase~Field~ : (bind)[T->Field]
+FieldRegistry .. Registry : (bind)[T->Field]
+CYamlFieldFactoryBase ..> FieldRegistry : defines
+Registry ..> IYamlTypeRegistry~T~ : wraps
 
 namespace cpsw_shared_obj.h {
     class Key {
@@ -568,6 +615,7 @@ namespace cpsw_api_builder.h {
 
     class Dev {
         <<typedef>>
+        shared_ptr~IDev~
     }
 
 }
@@ -577,7 +625,7 @@ IField ..|> IVisitable : implements
 IField *-- Cacheable
 IField <.. Field : wraps
 IIntField <.. IntField : sharedptr
-IDev <.. Dev : sharedptr
+IDev <.. Dev : wraps
 IDev ..|> IField : implements
 IDev ..|> IHub : implements
 IField --|> IEntry : virtual
