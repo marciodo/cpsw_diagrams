@@ -351,6 +351,35 @@ classDiagram
         +dumpClasses(std::ostream& os)* void
     }
 
+    class `cpsw_yaml.h : IRegistry`:::cpsw_yaml_h {
+        <<interface>>
+        +addItem(const char* name, void* item)* void
+        +delItem(const char* name)* void
+        +getItem(const char* name)* void*
+        +dumpItems(std::ostream& os)* void
+        +create(bool dynLoad)$ IRegistry*
+        +~IRegistry()
+    }
+
+    class `cpsw_yaml.h : CYamlTypeRegistry&ltT>`:::cpsw_yaml_h {
+        <<template class>>
+        -IRegistry* registry_
+        
+        +CYamlTypeRegistry(bool dynLoadSupport)
+        +~CYamlTypeRegistry()
+        +addFactory(const char* className, IYamlFactoryBase~T~* f) void
+        +delFactory(const char* className) void
+        +extractClassName(std::vector~std::string~* svec_p, YamlState& n) void
+        +extractInstantiate(YamlState& n) bool
+        +makeItem(YamlState& n) T
+        +dumpClasses(std::ostream& os) void
+        
+        -CYamlTypeRegistry(const CYamlTypeRegistry&)
+        -operator=(const CYamlTypeRegistry&) CYamlTypeRegistry
+    }
+
+    `cpsw_yaml.h : CYamlTypeRegistry&ltT>` -- `cpsw_yaml.h : IRegistry`
+    `cpsw_yaml.h : CYamlTypeRegistry&ltT>` --|> `cpsw_yaml.h : IYamlTypeRegistry&ltT>` : implements
     `cpsw_yaml.h : IYamlFactoryBase&lt;T>` ..> Registry : defines
     `cpsw_yaml.h : CYamlFieldFactoryBase` --|> `cpsw_yaml.h : IYamlFactoryBase&lt;T>` : (bind)[T->Field]
     `cpsw_yaml.h : CYamlFieldFactoryBase` ..> FieldRegistry : defines

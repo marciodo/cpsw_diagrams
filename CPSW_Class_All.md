@@ -129,6 +129,33 @@ namespace cpsw_yaml.h {
         shared_ptr~IYamlTypeRegistry~T~~
     }
     
+        class IRegistry {
+        <<interface>>
+        +addItem(const char* name, void* item)* void
+        +delItem(const char* name)* void
+        +getItem(const char* name)* void*
+        +dumpItems(std::ostream& os)* void
+        +create(bool dynLoad)$ IRegistry*
+        +~IRegistry()
+    }
+
+    class `CYamlTypeRegistry&ltT>` {
+        <<template class>>
+        -IRegistry* registry_
+        
+        +CYamlTypeRegistry(bool dynLoadSupport)
+        +~CYamlTypeRegistry()
+        +addFactory(const char* className, IYamlFactoryBase~T~* f) void
+        +delFactory(const char* className) void
+        +extractClassName(std::vector~std::string~* svec_p, YamlState& n) void
+        +extractInstantiate(YamlState& n) bool
+        +makeItem(YamlState& n) T
+        +dumpClasses(std::ostream& os) void
+        
+        -CYamlTypeRegistry(const CYamlTypeRegistry&)
+        -operator=(const CYamlTypeRegistry&) CYamlTypeRegistry
+    }
+
     class CYamlFieldFactoryBase {
         +dispatchMakeField(const YAML::Node& node, const char* root_name)$ Dev
         +loadPreprocessedYaml(std::istream& stream, const char* yaml_dir, bool resolveMergeKeys)$ YAML::Node
@@ -156,6 +183,8 @@ namespace cpsw_yaml.h {
     }
 }
 
+`CYamlTypeRegistry&ltT>` --|> IYamlTypeRegistry~T~ : implements
+`CYamlTypeRegistry&ltT>` -- IRegistry
 CYamlSupportBase ..|> IYamlSupportBase : implements
 IYamlFactoryBase~T~ ..> Registry : defines
 CYamlFieldFactoryBase --|> IYamlFactoryBase~Field~ : (bind)[T->Field]
