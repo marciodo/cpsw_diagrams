@@ -181,8 +181,53 @@ namespace cpsw_yaml.h {
         +delFactory(const char* className)* void
         +dumpClasses(std::ostream& os)* void
     }
+
+    class SYamlState {
+        <<struct>>
+        -Set unusedKeys
+        +SYamlState(YamlState* parent, unsigned index)
+        +SYamlState(YamlState* parent, const char* key)
+        +SYamlState(YamlState* parent, const char* key, const YAML::Node& node)
+        +~SYamlState()
+        +resetUnrecognizedKeys()$ void
+        +getUnrecognizedKeys()$ unsigned long
+        +incUnrecognizedKeys()$ unsigned long
+        +keySeen(const char* key) const void
+        +purgeKeys() const void
+        
+        -SYamlState(const SYamlState& orig)
+        -operator=(const SYamlState* other) SYamlState&
+        -incUnrecognizedKeys(int op)$ unsigned long
+        -initSieve() const void
+    }
+
+    class UnusedKey {
+        <<public nested class>>
+        -const char* name_
+        -int line_
+        -int col_
+        
+        +UnusedKey(const YAML::Node& key)
+        +UnusedKey(const char* k)
+        +getName() const char&ast;
+        +getLine() const int
+        +getColumn() const int
+    }
+
+    class UnusedKeyCmp {
+        <<public nested struct>>
+        +operator()(const UnusedKey& a, const UnusedKey& b) const int
+    }
+
+    class Set {
+        <<private typedef>>
+        std::set~UnusedKey, UnusedKeyCmp~
+    }
 }
 
+SYamlState *-- Set : contains
+SYamlState ..> UnusedKeyCmp : defines
+SYamlState ..> UnusedKey : defines
 `CYamlTypeRegistry&ltT>` --|> IYamlTypeRegistry~T~ : implements
 `CYamlTypeRegistry&ltT>` -- IRegistry
 CYamlSupportBase ..|> IYamlSupportBase : implements
@@ -647,8 +692,14 @@ namespace cpsw_api_builder.h {
         shared_ptr~IDev~
     }
 
+    class YamlState {
+        <<typedef>>
+        const struct SYamlState
+    }
+
 }
 
+YamlState ..> SYamlState : aliases
 IVisitable *-- RecursionOrder : public nested enum
 IField ..|> IVisitable : implements
 IField *-- Cacheable

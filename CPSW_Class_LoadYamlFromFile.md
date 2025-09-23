@@ -1,5 +1,5 @@
 ```mermaid
----
+ ---
 config:
   look: neo
   layout: elk
@@ -378,6 +378,78 @@ classDiagram
         -operator=(const CYamlTypeRegistry&) CYamlTypeRegistry
     }
 
+    class `cpsw_api_builder.h : YamlState`:::cpsw_api_builder_h {
+        <<typedef>>
+        const struct SYamlState
+    }
+    %%class `cpsw_yaml.h : CYamlSupportBase`:::cpsw_yaml_h
+    class `cpsw_yaml.h : SYamlState`:::cpsw_yaml_h {
+        <<struct>>
+        -Set unusedKeys
+        +SYamlState(YamlState* parent, unsigned index)
+        +SYamlState(YamlState* parent, const char* key)
+        +SYamlState(YamlState* parent, const char* key, const YAML::Node& node)
+        +~SYamlState()
+        +resetUnrecognizedKeys()$ void
+        +getUnrecognizedKeys()$ unsigned long
+        +incUnrecognizedKeys()$ unsigned long
+        +keySeen(const char* key) const void
+        +purgeKeys() const void
+        
+        -SYamlState(const SYamlState& orig)
+        -operator=(const SYamlState* other) SYamlState&
+        -incUnrecognizedKeys(int op)$ unsigned long
+        -initSieve() const void
+    }
+
+    class UnusedKey:::cpsw_yaml_h {
+        <<public nested class>>
+        -const char* name_
+        -int line_
+        -int col_
+        
+        +UnusedKey(const YAML::Node& key)
+        +UnusedKey(const char* k)
+        +getName() const char&ast;
+        +getLine() const int
+        +getColumn() const int
+    }
+
+    class UnusedKeyCmp:::cpsw_yaml_h {
+        <<public nested struct>>
+        +operator()(const UnusedKey& a, const UnusedKey& b) const int
+    }
+
+    class Set:::cpsw_yaml_h {
+        <<private typedef>>
+        std::set~UnusedKey, UnusedKeyCmp~
+    }
+
+    class `YAML::PNode` {
+            <<class>>
+            -const PNode* parent_
+            -const char* key_
+            
+            +PNode(const PNode* parent, const char* key)
+            +PNode(const PNode* parent, const char* key, const Node& node)
+            +PNode(const PNode* parent, unsigned index)
+            +~PNode()
+            +dump(FILE* f) const void
+            +getName() const char&ast;
+            +getParent() const PNode*
+            +toString() const std::string
+            +lookup(const char* key) const PNode
+            
+            -PNode(const PNode& orig)
+            -operator=(const Node& orig_node) PNode&
+    }
+
+    note "fsdfsdfsd"
+    note for `YAML::PNode` "fdsfsdfds"
+    `cpsw_yaml.h : SYamlState` *-- Set : contains
+    `cpsw_yaml.h : SYamlState` ..> UnusedKeyCmp : defines
+    `cpsw_yaml.h : SYamlState` ..> UnusedKey : defines
+    `cpsw_api_builder.h : YamlState` ..> `cpsw_yaml.h : SYamlState` : aliases
     `cpsw_yaml.h : CYamlTypeRegistry&ltT>` -- `cpsw_yaml.h : IRegistry`
     `cpsw_yaml.h : CYamlTypeRegistry&ltT>` --|> `cpsw_yaml.h : IYamlTypeRegistry&ltT>` : implements
     `cpsw_yaml.h : IYamlFactoryBase&lt;T>` ..> Registry : defines
