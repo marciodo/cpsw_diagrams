@@ -1,9 +1,8 @@
 ```mermaid
- ---
+---
 config:
   look: neo
   layout: elk
-  theme: neutral
 ---
 
 classDiagram
@@ -425,7 +424,7 @@ classDiagram
         std::set~UnusedKey, UnusedKeyCmp~
     }
 
-    class `YAML::PNode` {
+    class `cpsw_yaml.h : YAML::PNode`:::cpsw_yaml_h {
             <<class>>
             -const PNode* parent_
             -const char* key_
@@ -436,7 +435,7 @@ classDiagram
             +~PNode()
             +dump(FILE* f) const void
             +getName() const char&ast;
-            +getParent() const PNode*
+            +getParent() const PNode&ast;
             +toString() const std::string
             +lookup(const char* key) const PNode
             
@@ -444,8 +443,32 @@ classDiagram
             -operator=(const Node& orig_node) PNode&
     }
 
-    note "fsdfsdfsd"
-    note for `YAML::PNode` "fdsfsdfds"
+    class `YAML::Node` {
+            <<external yaml-cpp>>
+        }
+
+    class `cpsw_yaml.cc : CYamlNode`:::cpsw_yaml_h {
+        +CYamlNode(const YAML::Node& n)
+    }
+    
+    class `cpsw_api_builder.h : YamlNode`:::cpsw_api_builder_h {
+        <<typedef>>
+        shared_ptr~CYamlNode~
+    }
+
+    class `cpsw_yaml.h : CYamlFieldFactory&lt;T>`:::cpsw_yaml_h {
+        <<template class>>
+        +CYamlFieldFactory()
+        +makeItem(YamlState& state) Field
+    }
+    
+    `cpsw_yaml.h : CYamlFieldFactory&lt;T>` --|> `cpsw_yaml.h : CYamlFieldFactoryBase` : inherits
+    `cpsw_yaml.cc : CYamlNode` --|> `YAML::Node` : inherits
+    `cpsw_api_builder.h : YamlNode` ..> `cpsw_yaml.cc : CYamlNode` : wraps
+    `cpsw_yaml.h : YAML::PNode` -- `cpsw_yaml.h : YAML::PNode` : parent_
+    `cpsw_yaml.h : YAML::PNode` --|> `YAML::Node` : inherits
+    `cpsw_yaml.h : SYamlState` --|> `cpsw_yaml.h : YAML::PNode` : inherits
+    note for `cpsw_yaml.h : YAML::PNode` "YAML is also a namespace in cpsw_yam.h"
     `cpsw_yaml.h : SYamlState` *-- Set : contains
     `cpsw_yaml.h : SYamlState` ..> UnusedKeyCmp : defines
     `cpsw_yaml.h : SYamlState` ..> UnusedKey : defines

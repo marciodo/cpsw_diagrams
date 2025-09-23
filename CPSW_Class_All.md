@@ -104,7 +104,7 @@ IIntEntryAdapt --|> IEntryAdapt
 IIntEntryAdapt ..|> IScalVal_Base: implements
 CIntEntryImpl ..|> CEntryImpl
 
-namespace cpsw_yaml.h {
+namespace cpsw_yaml.h_or_cc {
     class CYamlSupportBase {
         +dumpYamlPart(YAML::Node& node) const void
         +_getClassName()$ const char*
@@ -223,8 +223,47 @@ namespace cpsw_yaml.h {
         <<private typedef>>
         std::set~UnusedKey, UnusedKeyCmp~
     }
+
+    class `YAML::PNode` {
+            <<class>>
+            -const PNode* parent_
+            -const char* key_
+            
+            +PNode(const PNode* parent, const char* key)
+            +PNode(const PNode* parent, const char* key, const Node& node)
+            +PNode(const PNode* parent, unsigned index)
+            +~PNode()
+            +dump(FILE* f) const void
+            +getName() const char&ast;
+            +getParent() const PNode&ast;
+            +toString() const std::string
+            +lookup(const char* key) const PNode
+            
+            -PNode(const PNode& orig)
+            -operator=(const Node& orig_node) PNode&
+    }
+
+    class CYamlNode {
+        +CYamlNode(const YAML::Node& n)
+    }
+
+    class CYamlFieldFactory~T~ {
+        <<template class>>
+        +CYamlFieldFactory()
+        +makeItem(YamlState& state) Field
+    }
+
 }
 
+class `YAML::Node` {
+        <<external yaml-cpp>>
+    }
+    
+CYamlFieldFactory~T~ --|> CYamlFieldFactoryBase : inherits
+`YAML::PNode` -- `YAML::PNode` : parent_
+`YAML::PNode` --|> `YAML::Node` : inherits
+SYamlState --|> `YAML::PNode` : inherits
+note for `YAML::PNode` "YAML is also a namespace in cpsw_yam.h"
 SYamlState *-- Set : contains
 SYamlState ..> UnusedKeyCmp : defines
 SYamlState ..> UnusedKey : defines
@@ -697,8 +736,15 @@ namespace cpsw_api_builder.h {
         const struct SYamlState
     }
 
+    class YamlNode {
+        <<typedef>>
+        shared_ptr~CYamlNode~
+    }
+
 }
 
+CYamlNode --|> `YAML::Node` : inherits
+YamlNode ..> CYamlNode : wraps
 YamlState ..> SYamlState : aliases
 IVisitable *-- RecursionOrder : public nested enum
 IField ..|> IVisitable : implements
