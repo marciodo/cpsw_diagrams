@@ -419,7 +419,7 @@ classDiagram
         +operator()(const UnusedKey& a, const UnusedKey& b) const int
     }
 
-    class Set:::cpsw_yaml_h {
+    class `SYamlState::Set`:::cpsw_yaml_h {
         <<private typedef>>
         std::set~UnusedKey, UnusedKeyCmp~
     }
@@ -461,7 +461,45 @@ classDiagram
         +CYamlFieldFactory()
         +makeItem(YamlState& state) Field
     }
+
+    class `cpsw_yaml.cc : RegistryImpl`:::cpsw_yaml_h {
+        -Map map_
+        -Set failed_
+        -bool dynLoad_
+        
+        +RegistryImpl(bool dynLoad)
+        +~RegistryImpl()
+        +addItem(const char* name, void* item) void
+        +delItem(const char* name) void
+        +getItem(const char* name) void&ast;
+        +dumpItems(std::ostream& os) void
+    }
+
+    class Map:::cpsw_yaml_h {
+        <<public typedef>>
+        std::map~std::string, void*~
+    }
     
+    class Member:::cpsw_yaml_h {
+        <<public typedef>>
+        std::pair~std::string, void*~
+    }
+    
+    class `RegistryImpl::Set`:::cpsw_yaml_h {
+        <<public typedef>>
+        StrSet
+    }
+
+    class StrSet:::cpsw_yaml_h {
+        <<typedef>>
+        unordered_set~std::string~
+    }
+    
+    `cpsw_yaml.cc : RegistryImpl` --|> `cpsw_yaml.h : IRegistry` : implements
+    `cpsw_yaml.cc : RegistryImpl` ..> Map : defines
+    `cpsw_yaml.cc : RegistryImpl` ..> Member : defines
+    `cpsw_yaml.cc : RegistryImpl` ..> `RegistryImpl::Set` : defines
+    `RegistryImpl::Set` ..> StrSet : is
     `cpsw_yaml.h : CYamlFieldFactory&lt;T>` --|> `cpsw_yaml.h : CYamlFieldFactoryBase` : inherits
     `cpsw_yaml.cc : CYamlNode` --|> `YAML::Node` : inherits
     `cpsw_api_builder.h : YamlNode` ..> `cpsw_yaml.cc : CYamlNode` : wraps
@@ -469,7 +507,7 @@ classDiagram
     `cpsw_yaml.h : YAML::PNode` --|> `YAML::Node` : inherits
     `cpsw_yaml.h : SYamlState` --|> `cpsw_yaml.h : YAML::PNode` : inherits
     note for `cpsw_yaml.h : YAML::PNode` "YAML is also a namespace in cpsw_yam.h"
-    `cpsw_yaml.h : SYamlState` *-- Set : contains
+    `cpsw_yaml.h : SYamlState` *-- `SYamlState::Set` : contains
     `cpsw_yaml.h : SYamlState` ..> UnusedKeyCmp : defines
     `cpsw_yaml.h : SYamlState` ..> UnusedKey : defines
     `cpsw_api_builder.h : YamlState` ..> `cpsw_yaml.h : SYamlState` : aliases

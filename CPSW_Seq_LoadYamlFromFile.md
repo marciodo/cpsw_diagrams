@@ -6,6 +6,8 @@ sequenceDiagram
     participant YamlState as cpsw_api_builder.h : YamlState
     participant CYamlFieldFactoryBase as cpsw_yaml.h : CYamlFieldFactoryBase
     participant CYamlTypeRegistry as cpsw_yaml.h : CYamlTypeRegistry
+    participant IRegistry as cpsw_yaml.h : IRegistry
+    participant RegistryImpl as cpsw_yaml.cc : RegistryImpl
 
     box cpsw_yaml.cc or .h
         participant IPath
@@ -13,6 +15,8 @@ sequenceDiagram
         participant YamlState
         participant CYamlFieldFactoryBase
         participant CYamlTypeRegistry
+        participant IRegistry
+        participant RegistryImpl
     end
 
     User->>+IPath: loadYamlFile
@@ -24,6 +28,12 @@ sequenceDiagram
         IYamlSupport->>IYamlSupport: buildHierarchy(YamlNode, ...)
         IYamlSupport->>+CYamlFieldFactoryBase: dispatchMakeField
             CYamlFieldFactoryBase->>CYamlFieldFactoryBase: getFieldRegistry_()
+            CYamlFieldFactoryBase->>+CYamlTypeRegistry: new CYamlTypeRegistry<Field>
+                CYamlTypeRegistry->>+IRegistry: registry_(IRegistry::create())
+                    IRegistry->>+RegistryImpl: RegistryImpl()
+                    RegistryImpl-->>-IRegistry: RegistryImpl
+                IRegistry-->>-CYamlTypeRegistry: IRegistry
+            CYamlTypeRegistry-->>-CYamlFieldFactoryBase: CYamlTypeRegistry<Field>
             CYamlFieldFactoryBase-->>CYamlFieldFactoryBase: CYamlTypeRegistry<Field>
             CYamlFieldFactoryBase->>+CYamlTypeRegistry: makeItem
             CYamlTypeRegistry-->>-CYamlFieldFactoryBase: <T>

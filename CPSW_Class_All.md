@@ -219,7 +219,7 @@ namespace cpsw_yaml.h_or_cc {
         +operator()(const UnusedKey& a, const UnusedKey& b) const int
     }
 
-    class Set {
+    class `SYamlState::Set` {
         <<private typedef>>
         std::set~UnusedKey, UnusedKeyCmp~
     }
@@ -253,18 +253,55 @@ namespace cpsw_yaml.h_or_cc {
         +makeItem(YamlState& state) Field
     }
 
+    class RegistryImpl {
+        -Map map_
+        -Set failed_
+        -bool dynLoad_
+        
+        +RegistryImpl(bool dynLoad)
+        +~RegistryImpl()
+        +addItem(const char* name, void* item) void
+        +delItem(const char* name) void
+        +getItem(const char* name) void&ast;
+        +dumpItems(std::ostream& os) void
+    }
+
+    class Map {
+        <<public typedef>>
+        std::map~std::string, void*~
+    }
+    
+    class Member {
+        <<public typedef>>
+        std::pair~std::string, void*~
+    }
+    
+    class `RegistryImpl::Set` {
+        <<public typedef>>
+        StrSet
+    }
+
+    class StrSet {
+        <<typedef>>
+        unordered_set~std::string~
+    }
 }
 
 class `YAML::Node` {
         <<external yaml-cpp>>
     }
     
+RegistryImpl --|> IRegistry : implements
+RegistryImpl ..> Map : defines
+RegistryImpl ..> Member : defines
+RegistryImpl ..> `RegistryImpl::Set` : defines
+`RegistryImpl::Set` ..> StrSet : is
 CYamlFieldFactory~T~ --|> CYamlFieldFactoryBase : inherits
 `YAML::PNode` -- `YAML::PNode` : parent_
 `YAML::PNode` --|> `YAML::Node` : inherits
 SYamlState --|> `YAML::PNode` : inherits
 note for `YAML::PNode` "YAML is also a namespace in cpsw_yam.h"
-SYamlState *-- Set : contains
+SYamlState *-- `SYamlState::Set` : contains
 SYamlState ..> UnusedKeyCmp : defines
 SYamlState ..> UnusedKey : defines
 `CYamlTypeRegistry&ltT>` --|> IYamlTypeRegistry~T~ : implements
